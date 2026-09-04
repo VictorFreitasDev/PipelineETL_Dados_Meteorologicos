@@ -4,7 +4,9 @@ import json
 import logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
+path_name = Path(__file__).parent.parent / "data" / "weather_data.json"
 
+columns_names_to_drop = ['weather','weather_icon', 'sys.type']
 
 def create_dataframe(path_name:str) -> pd.DataFrame:
     path = path_name
@@ -18,3 +20,22 @@ def create_dataframe(path_name:str) -> pd.DataFrame:
     df = pd.json_normalize(data)
     logging.info(f"DataFrame criado com sucesso: {df.shape[0]} linhas")
     return df  
+
+def normalize_weather_columns(df: pd.DataFrame) -> pd.DataFrame:
+    df_weather = pd.json_normalize(df['weather'].apply(lambda x: x[0]))
+
+    df_weather = df_weather.rename(columns={
+        'id': 'weather_id',
+        'main': 'weather_main',
+        'description': 'weather_description',
+        'icon': 'weather_icon'
+    })
+
+    df = pd.concat([df, df_weather], axis=1)
+    logging.info(f"\n Coluna 'weather' normalizada - {len(df.columns)} colunas")
+    return df
+
+def drop_columns(df: pd.DataFrame, columns_names:list[str]) -> pd.DataFrame:
+    df = df.drop(columns=columns_names)
+    logging.info(f"\n Colunas removidas: {columns_names} - {len(df.columns)} colunas restantes")
+    return df
